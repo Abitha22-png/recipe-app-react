@@ -19,8 +19,6 @@ function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/recipe/:id" element={<RecipeDetails/>} />
-      <Route path="/favorites" element={<Favorites/>} />
-      <Route path="/RecipeGrid" element={<RecipeGrid />} />
     </Routes>
   )
 }
