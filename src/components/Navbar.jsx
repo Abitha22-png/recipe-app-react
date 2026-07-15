@@ -14,10 +14,7 @@ const Navbar = () => {
           </span>
         </div>
 
-        {/* Middle - Search (optional) */}
-        <div className="flex-1 flex justify-center">
-          {/* <SearchBar /> */}
-        </div>
+  
 
         {/* Right - Favorites */}
        <div className="flex-1 flex justify-end text-white pr-2">

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 function RecipeDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
+
   const [recipe, setRecipe] = useState(null);
 
   useEffect(() => {
@@ -17,8 +19,30 @@ function RecipeDetails() {
 
   if (!recipe) return <p>Loading...</p>;
 
+    const ingredients = [];
+
+  for (let i = 1; i <= 20; i++) {
+    const ingredient = recipe[`strIngredient${i}`];
+    const measure = recipe[`strMeasure${i}`];
+
+    if (ingredient && ingredient.trim() !== "") {
+      ingredients.push({
+        ingredient,
+        measure,
+      });
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6">
+
+    <button
+  onClick={() => navigate("/")}
+  className="mb-6 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg"
+>
+  ← Back to Recipes
+</button>
+
       <img
         src={recipe.strMealThumb}
         className="w-full rounded-xl mb-6"
@@ -31,6 +55,22 @@ function RecipeDetails() {
       <p className="text-gray-600 mb-4">
         {recipe.strCategory} • {recipe.strArea}
       </p>
+
+        {/* Ingredients */}
+      <h2 className="text-2xl font-semibold mb-3">
+        Ingredients
+      </h2>
+
+      <ul className="list-disc list-inside space-y-2 mb-8">
+        {ingredients.map((item, index) => (
+          <li key={index}>
+            <span className="font-medium">
+              {item.measure}
+            </span>{" "}
+            {item.ingredient}
+          </li>
+        ))}
+      </ul>
 
       <h2 className="text-xl font-semibold mt-6">Instructions</h2>
       <p className="mt-2 leading-relaxed">

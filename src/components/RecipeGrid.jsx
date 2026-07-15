@@ -4,203 +4,491 @@ import SearchBar from "./SearchBar";
 import { useNavigate } from "react-router-dom";
 
 function RecipeGrid() {
+
   const [recipes, setRecipes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [ingredients, setIngredients] = useState([]);
-  const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [ingredient, setIngredient] = useState("");
 
-  // Fetch all recipes
-  const fetchAllRecipes = async () => {
-    const res = await api.get("search.php?s=");
-    setRecipes(res.data.meals || []);
-  };
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Search recipes
-  const handleSearch = async (text) => {
-    setSearch(text);
-    setCategory("");
-    setIngredient("");
+  const navigate = useNavigate();
 
-    const res = await api.get(`search.php?s=${text}`);
-    setRecipes(res.data.meals || []);
-  };
 
-  // Category filter
-  const handleCategory = async (cat) => {
-    setCategory(cat);
-    setSearch("");
-    setIngredient("");
-
-    if (!cat) {
-      fetchAllRecipes();
-      return;
-    }
-
-    const res = await api.get(`filter.php?c=${cat}`);
-    setRecipes(res.data.meals || []);
-  };
-
-  // Ingredient filter
-  const handleIngredient = async (ing) => {
-    setIngredient(ing);
-    setSearch("");
-    setCategory("");
-
-    if (!ing) {
-      fetchAllRecipes();
-      return;
-    }
-
-    const res = await api.get(`filter.php?i=${ing}`);
-    setRecipes(res.data.meals || []);
-  };
-
-  // Categories
+  // Fetch categories
   const fetchCategories = async () => {
-    const res = await api.get("categories.php");
-    setCategories(res.data.categories || []);
+    try {
+      const res = await api.get("categories.php");
+      setCategories(res.data.categories || []);
+    } catch {
+      setError("Failed to load categories");
+    }
   };
 
-  // Ingredients
+
+  // Fetch ingredients
   const fetchIngredients = async () => {
-    const res = await api.get("list.php?i=list");
-    setIngredients(res.data.meals || []);
+    try {
+      const res = await api.get("list.php?i=list");
+      setIngredients(res.data.meals || []);
+    } catch {
+      setError("Failed to load ingredients");
+    }
   };
+
+
+
+  // Main filter function
+  const applyFilters = async () => {
+
+    try {
+
+      setLoading(true);
+
+
+      let result = [];
+
+
+      // 1. Search by name
+      if (search) {
+
+        const res = await api.get(
+          `search.php?s=${search}`
+        );
+
+        result = res.data.meals || [];
+
+      }
+
+      else {
+
+        const res = await api.get(
+          "search.php?s="
+        );
+
+        result = res.data.meals || [];
+
+      }
+
+
+
+      // 2. Category filter
+
+      if (category) {
+
+        result = result.filter(
+          (meal) =>
+            meal.strCategory === category
+        );
+
+      }
+
+
+
+      // 3. Ingredient filter
+
+      if (ingredient) {
+
+        const ingredientRes = await api.get(
+          `filter.php?i=${ingredient}`
+        );
+
+
+        const ingredientMeals =
+          ingredientRes.data.meals || [];
+
+
+        result = result.filter((meal) =>
+
+          ingredientMeals.some(
+            (item) =>
+              item.idMeal === meal.idMeal
+          )
+
+        );
+
+      }
+
+
+
+      setRecipes(result);
+
+      setLoading(false);
+
+
+    }
+
+    catch (error) {
+
+      setError("Failed to load recipes");
+      setLoading(false);
+
+    }
+
+  };
+
+
+
+  // Search change
+  const handleSearch = (text) => {
+
+    setSearch(text);
+
+  };
+
+
+
+  // Category change
+  const handleCategory = (cat) => {
+
+    setCategory(cat);
+
+  };
+
+
+
+  // Ingredient change
+  const handleIngredient = (ing) => {
+
+    setIngredient(ing);
+
+  };
+
+
 
   useEffect(() => {
-    fetchAllRecipes();
+
     fetchCategories();
     fetchIngredients();
+
   }, []);
 
+
+
+  // Run whenever filters change
+
+  useEffect(() => {
+
+    applyFilters();
+
+  }, [search, category, ingredient]);
+
+
+
+
+  if (error) {
+
+    return (
+
+      <div className="text-center mt-20 text-red-500 text-xl">
+
+        {error}
+
+      </div>
+
+    );
+
+  }
+
+
+
+
   return (
+
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50">
-<div className="max-w-8xl mx-auto p-10">        
+
+
+      <div className="max-w-8xl mx-auto p-10">
+
+
         <div className="text-center mb-10">
+
           <h1 className="text-5xl font-extrabold text-gray-800">
+
             🍽️ Discover Delicious Recipes
+
           </h1>
 
+
           <p className="text-gray-500 text-lg mt-3">
+
             Explore thousands of recipes from around the world.
+
           </p>
+
         </div>
 
-        {/* Search & Filters */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-10 flex flex-wrap gap-4 justify-between items-center">
-          {/* Category */}
-          <select
-            value={category}
-            onChange={(e) => handleCategory(e.target.value)}
-            className="border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-400 outline-none"
-          >
-            <option value="">All Categories</option>
 
-            {categories.map((cat) => (
-              <option key={cat.idCategory} value={cat.strCategory}>
-                {cat.strCategory}
-              </option>
-            ))}
+
+
+        {/* Search + Filters */}
+
+
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-10 flex flex-wrap gap-4 justify-between items-center">
+
+
+
+          {/* Category */}
+
+          <select
+
+            value={category}
+
+            onChange={(e) => handleCategory(e.target.value)}
+
+            className="border rounded-xl px-4 py-3"
+
+          >
+
+            <option value="">
+
+              All Categories
+
+            </option>
+
+
+            {
+              categories.map((cat) => (
+
+                <option
+
+                  key={cat.idCategory}
+
+                  value={cat.strCategory}
+
+                >
+
+                  {cat.strCategory}
+
+                </option>
+
+              ))
+            }
+
+
           </select>
+
+
+
+
+
 
           {/* Ingredient */}
-          <select
-            value={ingredient}
-            onChange={(e) => handleIngredient(e.target.value)}
-            className="border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-400 outline-none"
-          >
-            <option value="">All Ingredients</option>
 
-            {ingredients.map((ing, index) => (
-              <option key={index} value={ing.strIngredient}>
-                {ing.strIngredient}
-              </option>
-            ))}
+
+          <select
+
+            value={ingredient}
+
+            onChange={(e) => handleIngredient(e.target.value)}
+
+            className="border rounded-xl px-4 py-3"
+
+          >
+
+            <option value="">
+
+              All Ingredients
+
+            </option>
+
+
+            {
+              ingredients.slice(0, 100).map((ing, index) => (
+
+                <option
+
+                  key={index}
+
+                  value={ing.strIngredient}
+
+                >
+
+                  {ing.strIngredient}
+
+                </option>
+
+
+              ))
+            }
+
+
           </select>
 
+
+
+
+
           {/* Search */}
+
           <SearchBar onSearch={handleSearch} />
+
+
+
         </div>
 
-        {/* Recipe Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {recipes?.map((recipe) => (
-            <div
-              key={recipe.idMeal}
-              className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
-            >
-              {/* Image */}
-              <div className="relative">
-                <img
-                  src={recipe.strMealThumb}
-                  alt={recipe.strMeal}
-                  className="w-full h-56 object-cover"
-                />
 
-                {/* Heart Icon */}
-                <div className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md cursor-pointer hover:scale-110 transition">
-                  ❤️
-                </div>
+
+
+
+        {
+          loading ?
+
+
+            (
+
+              <div className="text-center text-xl">
+
+                Loading recipes...
+
               </div>
 
-              {/* Content */}
-              <div className="p-5">
-                <h2 className="text-2xl font-bold text-gray-800 truncate">
-                  {recipe.strMeal}
-                </h2>
 
-                {/* Badges */}
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {recipe.strCategory && (
-                    <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm font-medium">
-                      {recipe.strCategory}
-                    </span>
-                  )}
+            )
 
-                  {recipe.strArea && (
-                    <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">
-                      {recipe.strArea}
-                    </span>
-                  )}
-                </div>
 
-                {/* Rating & Time */}
-                <div className="flex justify-between mt-5 text-sm text-gray-500">
-                  <span>⭐ 4.8</span>
-                  <span>⏱ 30 mins</span>
-                </div>
+            :
 
-                {/* Button */}
-                <button
-                  onClick={() => navigate(`/recipe/${recipe.idMeal}`)}
-                  className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-semibold transition duration-300"
-                >
-                  View Recipe
-                </button>
+
+            (
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+
+
+                {
+
+                  recipes.map((recipe) => (
+
+
+                    <div
+
+                      key={recipe.idMeal}
+
+                      className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition"
+
+                    >
+
+
+
+                      <img
+
+                        src={recipe.strMealThumb}
+
+                        alt={recipe.strMeal}
+
+                        className="w-full h-56 object-cover"
+
+                      />
+
+
+
+
+                      <div className="p-5">
+
+
+                        <h2 className="text-2xl font-bold truncate">
+
+                          {recipe.strMeal}
+
+                        </h2>
+
+
+
+
+                        {
+                          recipe.strCategory &&
+
+                          <span className="inline-block mt-3 bg-orange-100 text-orange-600 px-3 py-1 rounded-full">
+
+                            {recipe.strCategory}
+
+                          </span>
+
+                        }
+
+
+
+
+                        <button
+
+                          onClick={() =>
+                            navigate(`/recipe/${recipe.idMeal}`)
+                          }
+
+                          className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl"
+
+                        >
+
+                          View Recipe
+
+                        </button>
+
+
+
+                      </div>
+
+
+
+                    </div>
+
+
+                  ))
+
+                }
+
+
               </div>
+
+            )
+
+        }
+
+
+
+
+
+        {
+          recipes.length === 0 && !loading &&
+
+          (
+
+            <div className="text-center mt-20">
+
+
+              <h2 className="text-3xl font-bold text-gray-600">
+
+                No Recipes Found 😔
+
+              </h2>
+
+
+              <p className="text-gray-500 mt-3">
+
+                Try another search or filter.
+
+              </p>
+
+
             </div>
-          ))}
-        </div>
 
-        {/* Empty State */}
-        {recipes.length === 0 && (
-          <div className="text-center mt-20">
-            <h2 className="text-3xl font-bold text-gray-600">
-              No Recipes Found 😔
-            </h2>
+          )
 
-            <p className="text-gray-500 mt-3">
-              Try searching with another keyword or filter.
-            </p>
-          </div>
-        )}
+        }
+
+
+
       </div>
+
+
     </div>
+
   );
+
 }
+
 
 export default RecipeGrid;
