@@ -10,6 +10,7 @@ import heroImg from './assets/hero.png'
 import './App.css';
 import Navbar from "./components/Navbar";
 import RecipeGrid from "./components/RecipeGrid";
+import FavoritesPage from "./pages/Favorites";
 
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+        <Route path="/favorites" element={<Favorites />} />
       <Route path="/recipe/:id" element={<RecipeDetails/>} />
     </Routes>
   )

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import SearchBar from "./SearchBar";
 import { useNavigate } from "react-router-dom";
+import {addFavorite,removeFavorite,isFavorite} from "../utils/localStorage";
 
 function RecipeGrid() {
 
@@ -15,6 +16,7 @@ function RecipeGrid() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [refresh, setRefresh] = useState(false);
 
   const navigate = useNavigate();
 
@@ -39,6 +41,16 @@ function RecipeGrid() {
       setError("Failed to load ingredients");
     }
   };
+
+  const toggleFavorite = (recipe) => {
+  if (isFavorite(recipe.idMeal)) {
+    removeFavorite(recipe.idMeal);
+  } else {
+    addFavorite(recipe);
+  }
+
+  setRefresh(!refresh);
+};
 
 
 
@@ -409,6 +421,19 @@ function RecipeGrid() {
                           </span>
 
                         }
+
+                        <button
+  onClick={() => toggleFavorite(recipe)}
+  className={`mt-3 w-full py-2 rounded-xl ${
+    isFavorite(recipe.idMeal)
+      ? "bg-red-500 text-white"
+      : "bg-gray-200"
+  }`}
+>
+  {isFavorite(recipe.idMeal)
+    ? "❤️ Remove Favorite"
+    : "🤍 Add Favorite"}
+</button>
 
 
 
